@@ -218,13 +218,16 @@ void viewResults(struct task taskList[], int num) {
         for (int i = 0; i < completedCount; i++) {
             printf("%d ", completedTasks[i]);
         }
+
+        printf("\n");
+        
         if (failedCount > 0) {
             for (int i = 0; i < failedCount; i++) {
                 printf("%d ", failedTasks[i]);
             }
             printf("\n");
         }
-        
+
     printf("\n");
     } else { // User mode
         printf("Total time taken: %d\n", totalTime);
