@@ -1,11 +1,7 @@
 // Group 7: Fernanda Cantú Ortega, Cristina Alessandra González, Iker García Germán
 
-// Agregar comments al final
-// Todos los comments que hay currently son sobre cosas que faltan
-// Falta agregar que cheque todo en plan si son mas de 500 tasks o si el numero de tasks es negativo o asi
-
 #include <stdio.h>
-#include <stdbool.h> // gpt
+#include <stdbool.h>
 
 struct scheduler {
     int id;
@@ -13,11 +9,11 @@ struct scheduler {
     int priority;
     char *status;
     int dependencies;
-    int dependencyList[100]; // gpt
+    int dependencyList[100];
 };
 
-int mode, *num, executionCount;
-int executionOrder[500];
+int mode, *num, completedCount;
+int completedTasks[500];
 
 void enterTasks(struct scheduler tasks[], int *num) {
     if (mode == 0) {
@@ -52,7 +48,6 @@ void enterTasks(struct scheduler tasks[], int *num) {
                     break; 
                 }
                 if (dependency >= 0 && dependency < *num) {
-                    // Fix que me dio gepeto, a ver sicierto
                     if (tasks[i].dependencies == -1) {
                         tasks[i].dependencies = 0;
                     }
@@ -106,7 +101,6 @@ void enterTasks(struct scheduler tasks[], int *num) {
                     break; 
                 }
                 if (dependency >= 0 && dependency < *num) {
-                    // Fix que me dio gepeto, a ver sicierto
                     if (tasks[i].dependencies == -1) {
                         tasks[i].dependencies = 0;
                     }
@@ -119,7 +113,6 @@ void enterTasks(struct scheduler tasks[], int *num) {
     }
 }
 
-//gpt
 bool canExecute(struct scheduler task, struct scheduler tasks[]) {
     for (int i = 0; i < task.dependencies; i++) {
         if (tasks[task.dependencyList[i]].status != "Completed") {
@@ -130,8 +123,6 @@ bool canExecute(struct scheduler task, struct scheduler tasks[]) {
 }
 
 void executeTaskScheduling(struct scheduler tasks[], int num) {
-    int completedTasks[num];
-    int completedCount = 0; //cambiar a count
     int totalTime = 0;
 
     while (completedCount < num) {
@@ -155,11 +146,6 @@ void executeTaskScheduling(struct scheduler tasks[], int num) {
             totalTime += tasks[currentTask].duration;
             tasks[currentTask].status = "Completed";
             completedTasks[completedCount++] = tasks[currentTask].id;
-            for (int i = 0; i < num; i++) {
-                if (tasks[i].status == "pending") {
-                    tasks[i].dependencies--;
-                }
-            }
         } else {
             printf("Task %d started...\n", tasks[currentTask].id);
             totalTime += tasks[currentTask].duration;
@@ -167,12 +153,6 @@ void executeTaskScheduling(struct scheduler tasks[], int num) {
 
             tasks[currentTask].status = "Completed";
             completedTasks[completedCount++] = tasks[currentTask].id;
-
-            for (int i = 0; i < num; i++) {
-                if (tasks[i].status == "pending") {
-                    tasks[i].dependencies--;
-                }
-            }
 
             printf("Task scheduling completed.\n");  
         }
@@ -202,35 +182,39 @@ void showStatus(struct scheduler tasks[], int num) {
 
 void viewResults(struct scheduler tasks[], int num) {
     int totalTime = 0;
-    int completedTasks[num];
-    int completedCount = 0;
     int failedTasks[num];
     int failedCount = 0;
 
     for (int i = 0; i < num; i++) {
-        if (tasks[i].status == "Completed") {
-            completedTasks[completedCount++] = tasks[i].id;
+        if (tasks[i].status == "Completed"){
             totalTime += tasks[i].duration;
         } else if (tasks[i].status == "Pending") {
             failedTasks[failedCount++] = tasks[i].id;
         }
     }
 
-    printf("Total time taken: %d\n", totalTime);
-
-    // Falta que se imprima en el orden en el que se realizaron las tareas
-    printf("Completed tasks: ");
-    for (int i = 0; i < completedCount; i++) {
-        printf("%d ", completedTasks[i]);
-    }
+    if (mode == 0) {
+        printf("%d \n", totalTime);
+        for (int i = 0; i < completedCount; i++) {
+            printf("%d ", completedTasks[i]);
+        }
     printf("\n");
+    } else {
+        printf("Total time taken: %d\n", totalTime);
 
-    if (failedCount > 0) {
-        printf("Uncompleted tasks due to unmet dependencies: ");
-        for (int i = 0; i < failedCount; i++) {
-            printf("%d ", failedTasks[i]);
+        printf("Completed tasks: ");
+        for (int i = 0; i < completedCount; i++) {
+            printf("%d ", completedTasks[i]);
         }
         printf("\n");
+
+        if (failedCount > 0) {
+            printf("Uncompleted tasks due to unmet dependencies: ");
+            for (int i = 0; i < failedCount; i++) {
+                printf("%d ", failedTasks[i]);
+            }
+            printf("\n");
+        }
     }
 }
 
