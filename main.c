@@ -15,26 +15,76 @@ struct scheduler {
 int mode, *num;
 
 void enterTasks(struct scheduler tasks[], int *num) {
-    // 1. The program will ask for the total number of tasks
+    if (mode == 0) {
+        printf("Judge Mode.\n");
+        scanf("%d", num);
+        if (*num <= 0) {
+            return;
+        }
+        for(int id = 0; id < *num; id++){
+            tasks[id].id = id;
+            do {
+                scanf("%d", &tasks[id].duration);
+
+                if (tasks[id].duration <= 0 || tasks[id].duration > 1000) {
+                    return;
+                }
+            } while (tasks[id].duration <= 0);
+
+            do {
+                scanf("%d", &tasks[id].priority);
+                if (tasks[id].priority < 0 || tasks[id].priority > 25) {
+                    return;
+                }
+            } while (tasks[id].priority < 1 || tasks[id].priority > 25);
+
+            tasks[id].status = "Pending";
+        }
+
+        for (int i = 0; i < *num; i++) {
+            tasks[i].dependencies = 0;
+            while (1) {
+                int dep;
+                scanf("%d", &dep);
+                if (dep == -1) {
+                    break; 
+                }
+                if (dep >= 0 && dep < *num) {
+                    tasks[i].dependencies++;
+                } else {
+                    return;
+                }   
+            }
+        }
+
+        printf("For debugging POST-dependencies: \n");
+        for (int i = 0; i < *num; i++) {
+            printf("Task #%d - Duration: %d sec, Priority %d, Status: %s, Dependencies: %d\n", 
+                tasks[i].id, tasks[i].duration, tasks[i].priority, tasks[i].status, tasks[i].dependencies);
+        }
+    }
+    else {
         printf("Enter the total number of tasks: ");
         scanf("%d", num);
 
-    // Then, for each task:
+        if (*num <= 0) {
+            printf("Invalid number of tasks.\n");
+            return;
+        }
+
         for(int id = 0; id < *num; id++){
-            // Assigns a unique ID
             tasks[id].id = id;
             printf("For task with ID #%d:\n", id);
 
-            // Request duration of the task 
             do {
                 printf("Enter the duration of the task: ");
                 scanf("%d", &tasks[id].duration);
+
                 if (tasks[id].duration <= 0 || tasks[id].duration > 1000) {
                     printf("Invalid duration. Please try again.\n");
                 }
             } while (tasks[id].duration <= 0);
 
-            // Request priority of the task
             do {
                 printf ("Enter the priority of the task: ");
                 scanf("%d", &tasks[id].priority);
@@ -43,11 +93,9 @@ void enterTasks(struct scheduler tasks[], int *num) {
                 }
             } while (tasks[id].priority < 1 || tasks[id].priority > 25);
 
-            // Default status of each task is pending
             tasks[id].status = "Pending";
         }
 
-        // Dependency list for each task
         for (int i = 0; i < *num; i++) {
             tasks[i].dependencies = 0;
             printf("Enter dependencies for task #%d (end with -1): ", i);
@@ -71,23 +119,93 @@ void enterTasks(struct scheduler tasks[], int *num) {
                 tasks[i].id, tasks[i].duration, tasks[i].priority, tasks[i].status, tasks[i].dependencies);
         }
     }
+}
 
 void executeTaskScheduling(struct scheduler tasks[], int num) {
-    printf("Executing task scheduling...\n");
+    int completedTasks[num];
+    int completedCount = 0; //cambiar a count
+    int totalTime = 0;
+
+    while (completedCount < num) {
+        int selectedTask = -1; // cambiar a currentTask
+
+        for (int i = 0; i < num; i++) {
+            if (tasks[i].status == "Pending" && tasks[i].dependencies == 0) {
+                if (selectedTask == -1 || 
+                    tasks[i].priority < tasks[selectedTask].priority ||
+                    (tasks[i].priority == tasks[selectedTask].priority && tasks[i].duration < tasks[selectedTask].duration) ||
+                    (tasks[i].priority == tasks[selectedTask].priority && tasks[i].duration == tasks[selectedTask].duration && tasks[i].id < tasks[selectedTask].id)) {
+                        selectedTask = i;
+                }
+            }
+        }
+
+        if (selectedTask == -1) {
+            break; // No executable tasks due to unmet dependencies
+        }
+
+        printf("Task %d started...\n", tasks[selectedTask].id);
+        totalTime += tasks[selectedTask].duration;
+        printf("\t Task %d completed in %d seconds\n", tasks[selectedTask].id, totalTime);
+
+        tasks[selectedTask].status = "Completed";
+        completedTasks[completedCount] = tasks[selectedTask].id;
+
+        for (int i = 0; i < num; i++) {
+            if (tasks[i].status == "Pending") {
+                tasks[i].dependencies--;
+            }
+        }
+
+        printf("Task scheduling completed.\n");
+    }
+    //Starts executing tasks, respecting dependencies and prioritizing urgency (lower priority values indicate higher urgency).
+    //The program should identify tasks with no pending dependencies and, among those, select the highest-priority task to execute.
+    //If multiple tasks share the same priority and can be executed, it selects the one with the shortest duration; 
+    //if the tie persists, it chooses the one with the smallest task_id.
+    //During execution in user mode, the program should print a message indicating the start and completion of each task, including the cumulative time up to that point  
 }
 
 void showStatus(struct scheduler tasks[], int num) {
-    // Falta que si no hay dependencias, salga None en vez de 0
     printf("Showing status of all tasks...\n");
     for (int i = 0; i < num; i++) {
         printf("Task #%d - Duration: %d sec, Priority %d, Status: %s, Dependencies: %d\n", tasks[i].id, tasks[i].duration, tasks[i].priority, tasks[i].status, tasks[i].dependencies);
     }
 }
 
-void viewResults() {
-    printf("Viewing results report...\n");
-    printf("Total time: %d\n", 0);
-    printf("Completed tasks: %d\n", 0);
+void viewResults(struct scheduler tasks[], int num) {
+    int totalTime = 0;
+    int completedTasks[num];
+    int completedCount = 0;
+    int failedTasks[num];
+    int failedCount = 0;
+
+    for (int i = 0; i < num; i++) {
+        if (tasks[i].status == "Completed") {
+            completedTasks[completedCount++] = tasks[i].id;
+            totalTime += tasks[i].duration;
+        } else if (tasks[i].status == "Pending") {
+            failedTasks[failedCount++] = tasks[i].id;
+        }
+    }
+
+    printf("Total time taken: %d\n", totalTime);
+
+    printf("Completed tasks: ");
+    for (int i = 0; i < completedCount; i++) {
+        printf("%d ", completedTasks[i]);
+    }
+    printf("\n");
+
+    if (failedCount > 0) {
+        printf("Uncompleted tasks due to unmet dependencies: ");
+        for (int i = 0; i < failedCount; i++) {
+            printf("%d ", failedTasks[i]);
+        }
+        printf("\n");
+    } else {
+        printf("All tasks were completed successfully.\n");
+    }
 }
 
 void main () {
@@ -122,7 +240,7 @@ void main () {
                 showStatus(tasks, num);
                 break;
             case 4:
-                viewResults();
+                viewResults(tasks, num);
                 break;
             case 5:
                 if (mode == 0) {
